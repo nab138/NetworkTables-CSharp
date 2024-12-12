@@ -9,7 +9,7 @@ namespace NetworkTables
         public readonly int Uid;
         public readonly string Name;
         public readonly string Type;
-        private readonly Dictionary<string, object> _properties;
+        private Dictionary<string, object> _properties;
         
         public Nt4Topic(int uid, string name, string type, Dictionary<string, object> properties)
         {
@@ -54,6 +54,16 @@ namespace NetworkTables
             }
         
             return 5; // Default to binary
+        }
+
+        public void SetProperty(string key, object value)
+        {
+            _properties[key] = value;
+        }
+
+        public void RemoveProperty(string key)
+        {
+            _properties.Remove(key);
         }
     }
 }

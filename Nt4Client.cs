@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using MessagePack;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,12 +16,12 @@ namespace NetworkTablesSharp
     /// <param name="serverPort">The port to connect to the server on (default 5810)</param>
     /// <param name="onOpen">On Open event handler</param>
     /// <param name="onNewTopicData">On New Topic Data event handler</param>
-    public class Nt4Client(string appName, string serverBaseAddress, int serverPort = 5810, EventHandler? onOpen = null, Action<Nt4Topic, long, object>? onNewTopicData = null)
+    public class Nt4Client
     {
         /// <summary>
         /// Convert a type string to its corresponding integer.
         /// </summary>
-        public static readonly Dictionary<string, int> TypeStrIdxLookup = new()
+        public static readonly Dictionary<string, int> TypeStrIdxLookup = new Dictionary<string, int>()
         {
             { "boolean", 0 },
             { "double", 1 },
@@ -36,16 +38,28 @@ namespace NetworkTablesSharp
             {"float[]", 19},
             {"string[]", 20},
         };
-        private readonly string _serverAddress = "ws://" + serverBaseAddress + ":" + serverPort + "/nt/" + appName;
+
+        private readonly string _serverAddress;
+        private readonly EventHandler? _onOpen;
+        private readonly Action<Nt4Topic, long, object>? _onNewTopicData;
+        private readonly string _appName;
+
+        public Nt4Client(string appName, string serverBaseAddress, int serverPort = 5810, EventHandler? onOpen = null, Action<Nt4Topic, long, object>? onNewTopicData = null)
+        {
+            _serverAddress = "ws://" + serverBaseAddress + ":" + serverPort + "/nt/" + appName;
+            _onOpen = onOpen;
+            _onNewTopicData = onNewTopicData;
+            _appName = appName;
+        }
         
         
         private WebSocket? _ws;
         private long? _serverTimeOffsetUs;
         private long _networkLatencyUs;
 
-        private readonly Dictionary<int, Nt4Subscription> _subscriptions = [];
-        private readonly Dictionary<string, Nt4Topic> _publishedTopics = [];
-        private readonly Dictionary<string, Nt4Topic> _serverTopics = [];
+        private readonly Dictionary<int, Nt4Subscription> _subscriptions = new Dictionary<int, Nt4Subscription>();
+        private readonly Dictionary<string, Nt4Topic> _publishedTopics = new Dictionary<string, Nt4Topic>();
+        private readonly Dictionary<string, Nt4Topic> _serverTopics = new Dictionary<string, Nt4Topic>();
 
         /// <summary>
         /// Connect to the NetworkTables server.
@@ -86,8 +100,8 @@ namespace NetworkTablesSharp
         
         private void OnOpen(object? sender, EventArgs e)
         {
-            Console.WriteLine("[NT4] Connected with identity " + appName);
-            onOpen?.Invoke(sender, e);
+            Console.WriteLine("[NT4] Connected with identity " + _appName);
+            _onOpen?.Invoke(sender, e);
             WsSendTimestamp();
         }
 
@@ -150,7 +164,7 @@ namespace NetworkTablesSharp
         /// <param name="type">The type of topic</param>
         public void PublishTopic(string key, string type)
         {
-            PublishTopic(key, type, []);
+            PublishTopic(key, type, new Dictionary<string, object>());
         }
         
         /// <summary>
@@ -161,7 +175,7 @@ namespace NetworkTablesSharp
         /// <param name="properties">Properties of the topic</param>
         public void PublishTopic(string key, string type, Dictionary<string, object> properties)
         {
-            Nt4Topic topic = new(GetNewUid(), key, type, properties);
+            Nt4Topic topic = new Nt4Topic(GetNewUid(), key, type, properties);
             if (!Connected() || _publishedTopics.ContainsKey(key)) return;
             _publishedTopics.Add(key, topic);
             WsPublishTopic(topic);
@@ -214,8 +228,8 @@ namespace NetworkTablesSharp
         public int Subscribe(string key, double periodic = 0.1, bool all = false, bool topicsOnly = false, bool prefix = false)
         {
             if(!Connected()) return -1;
-            Nt4SubscriptionOptions opts = new(periodic, all, topicsOnly, prefix);
-            Nt4Subscription sub = new(GetNewUid(), [key], opts);
+            Nt4SubscriptionOptions opts = new Nt4SubscriptionOptions(periodic, all, topicsOnly, prefix);
+            Nt4Subscription sub = new Nt4Subscription(GetNewUid(), new string[] {key}, opts);
             WsSubscribe(sub);
             _subscriptions.Add(sub.Uid, sub);
             return sub.Uid;
@@ -230,7 +244,7 @@ namespace NetworkTablesSharp
         public int Subscribe(string key, Nt4SubscriptionOptions opts)
         {
             if(!Connected()) return -1;
-            Nt4Subscription sub = new(GetNewUid(), [key], opts);
+            Nt4Subscription sub = new Nt4Subscription(GetNewUid(), new string[] { key }, opts);
             WsSubscribe(sub);
             _subscriptions.Add(sub.Uid, sub);
             return sub.Uid;
@@ -248,8 +262,8 @@ namespace NetworkTablesSharp
         public int Subscribe(string[] keys, double periodic = 0.1, bool all = false, bool topicsOnly = false, bool prefix = false)
         {
             if(!Connected()) return -1;
-            Nt4SubscriptionOptions opts = new(periodic, all, topicsOnly, prefix);
-            Nt4Subscription sub = new(GetNewUid(), keys, opts);
+            Nt4SubscriptionOptions opts = new Nt4SubscriptionOptions(periodic, all, topicsOnly, prefix);
+            Nt4Subscription sub = new Nt4Subscription(GetNewUid(), keys, opts);
             WsSubscribe(sub);
             _subscriptions.Add(sub.Uid, sub);
             return sub.Uid;
@@ -276,7 +290,7 @@ namespace NetworkTablesSharp
         private void WsSendJson(string method, Dictionary<string, object> paramsObj)
         {
             if (!Connected()) return;
-            Dictionary<string, object> msg = new()
+            Dictionary<string, object> msg = new Dictionary<string, object>()
             {
                 { "method", method },
                 { "params", paramsObj }
@@ -361,8 +375,8 @@ namespace NetworkTablesSharp
         private void HandleJsonMessage(Dictionary<string, object> msg)
         {
             if(!msg.ContainsKey("method") || !msg.ContainsKey("params")) return;
-            if (msg["method"] is not string method) return;
-            if (msg["params"] is not JObject parameters) return;
+            if (!(msg["method"] is string method)) return;
+            if (!(msg["params"] is JObject parameters)) return;
             Dictionary<string, object>? parametersDict = parameters.ToObject<Dictionary<string, object>>();
             if(parametersDict == null)
             {
@@ -371,7 +385,7 @@ namespace NetworkTablesSharp
             }
             if (method == "announce")
             {
-                Nt4Topic topic = new(parametersDict);
+                Nt4Topic topic = new Nt4Topic(parametersDict);
                 if (_serverTopics.ContainsKey(topic.Name))
                 {
                     Console.WriteLine("[NT4] Received announcement for topic that already exists: " + topic.Name);
@@ -393,7 +407,7 @@ namespace NetworkTablesSharp
             }
             else if (method == "properties")
             {
-                if (parametersDict["name"] is not string name) return;
+                if (!(parametersDict["name"] is string name)) return;
                 if (!_serverTopics.ContainsKey(name))
                 {
                     Console.WriteLine("[NT4] Received properties update for topic that does not exist: " + name);
@@ -434,7 +448,7 @@ namespace NetworkTablesSharp
                 }
                 if (topic == null) return;
 
-                onNewTopicData?.Invoke(topic, timestampUs, value);
+                _onNewTopicData?.Invoke(topic, timestampUs, value);
             } else if (topicId == -1)
             {
                 WsHandleReceiveTimestamp(timestampUs, Convert.ToInt64(value));

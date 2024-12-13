@@ -11,10 +11,10 @@ namespace NetworkTablesSharp
     {
         public readonly Nt4Client Client;
 
-        private readonly Dictionary<string, object> _values = [];
+        private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
 
-        private readonly Dictionary<string, (string, Dictionary<string, object>)> _queuedPublishes = [];
-        private readonly Dictionary<string, Nt4SubscriptionOptions> _queuedSubscribes = [];
+        private readonly Dictionary<string, (string, Dictionary<string, object>)> _queuedPublishes = new Dictionary<string, (string, Dictionary<string, object>)>();
+        private readonly Dictionary<string, Nt4SubscriptionOptions> _queuedSubscribes = new Dictionary<string, Nt4SubscriptionOptions>();
 
         /// <summary>
         /// Create a new NT4Source which automatically creates a client and connects to the server.
@@ -36,7 +36,7 @@ namespace NetworkTablesSharp
         /// <param name="type">The type of topic</param>
         public void PublishTopic(string topic, string type)
         {
-            PublishTopic(topic, type, []);
+            PublishTopic(topic, type, new Dictionary<string, object>());
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace NetworkTablesSharp
         /// </summary>
         /// <param name="key">The topic to get the value of</param>
         /// <returns>The latest value of the topic, or default if it doesn't exist</returns>
-        public T? GetValue<T>(string key)
+        public T GetValue<T>(string key)
         {
             if (_values.TryGetValue(key, out var value))
             {
@@ -105,7 +105,7 @@ namespace NetworkTablesSharp
         /// <param name="key">The topic to get the value of</param>
         /// <param name="timestamp">The timestamp to get the value at</param>
         /// <returns>The most recent value before or at the given timestamp, or default if it doesn't exist</returns>
-        public T? GetValue<T>(string key, long timestamp)
+        public T GetValue<T>(string key, long timestamp)
         {
             if (_values.TryGetValue(key, out var value))
             {

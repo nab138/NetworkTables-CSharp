@@ -1,9 +1,11 @@
+using System.Collections.Generic;
+
 namespace NetworkTablesSharp
 {
     public class TopicValue<T>
     {
-        private readonly Dictionary<long, T> _timestampedValues = [];
-        private T? _latestValue = default;
+        private readonly Dictionary<long, T> _timestampedValues = new Dictionary<long, T>();
+        private T _latestValue = default;
         
         public void AddValue(long timestamp, T value)
         {
@@ -11,12 +13,12 @@ namespace NetworkTablesSharp
             _latestValue = value;
         }
         
-        public T? GetValue()
+        public T GetValue()
         {
             return _latestValue;
         }
         
-        public T? GetValue(long timestamp)
+        public T GetValue(long timestamp)
         {
             if (_timestampedValues.ContainsKey(timestamp))
             {

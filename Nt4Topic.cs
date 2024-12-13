@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System;
 using Newtonsoft.Json;
 
 namespace NetworkTablesSharp

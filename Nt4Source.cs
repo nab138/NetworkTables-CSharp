@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NetworkTables
+namespace NetworkTablesSharp
 {
     /// <summary>
     ///     A user-friendly wrapper around the NetworkTables client for NT4 that keeps a local timestamped record of the values of topics.
@@ -11,10 +11,10 @@ namespace NetworkTables
     {
         public readonly Nt4Client Client;
 
-        private readonly Dictionary<string, object> _values = new();
+        private readonly Dictionary<string, object> _values = [];
 
-        private readonly Dictionary<string, (string, Dictionary<string, object>)> _queuedPublishes = new();
-        private readonly Dictionary<string, Nt4SubscriptionOptions> _queuedSubscribes = new();
+        private readonly Dictionary<string, (string, Dictionary<string, object>)> _queuedPublishes = [];
+        private readonly Dictionary<string, Nt4SubscriptionOptions> _queuedSubscribes = [];
 
         /// <summary>
         /// Create a new NT4Source which automatically creates a client and connects to the server.
@@ -36,7 +36,7 @@ namespace NetworkTables
         /// <param name="type">The type of topic</param>
         public void PublishTopic(string topic, string type)
         {
-            PublishTopic(topic, type, new Dictionary<string, object>());
+            PublishTopic(topic, type, []);
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace NetworkTables
         /// </summary>
         /// <param name="key">The topic to get the value of</param>
         /// <returns>The latest value of the topic, or default if it doesn't exist</returns>
-        public T GetValue<T>(string key)
+        public T? GetValue<T>(string key)
         {
             if (_values.TryGetValue(key, out var value))
             {
@@ -105,7 +105,7 @@ namespace NetworkTables
         /// <param name="key">The topic to get the value of</param>
         /// <param name="timestamp">The timestamp to get the value at</param>
         /// <returns>The most recent value before or at the given timestamp, or default if it doesn't exist</returns>
-        public T GetValue<T>(string key, long timestamp)
+        public T? GetValue<T>(string key, long timestamp)
         {
             if (_values.TryGetValue(key, out var value))
             {
@@ -150,7 +150,7 @@ namespace NetworkTables
             return Client.GetServerTimeUs();
         }
 
-        private void OnOpen(object sender, EventArgs e)
+        private void OnOpen(object? sender, EventArgs e)
         {
             foreach (string topic in _queuedPublishes.Keys)
             {

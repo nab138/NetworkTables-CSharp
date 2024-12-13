@@ -1,19 +1,10 @@
 using System.Collections.Generic;
 
-namespace NetworkTables
+namespace NetworkTablesSharp
 {
-    public class Nt4Subscription
+    public class Nt4Subscription(int uid, string[] topics, Nt4SubscriptionOptions options)
     {
-        public int Uid = -1;
-        private string[] _topics = new string[0];
-        private Nt4SubscriptionOptions _options = new Nt4SubscriptionOptions();
-
-        public Nt4Subscription(int uid, string[] topics, Nt4SubscriptionOptions options)
-        {
-            Uid = uid;
-            _topics = topics;
-            _options = options;
-        }
+        public int Uid = uid;
 
         /**
          * Return a JSON object that can be sent to the server to subscribe to this subscription.
@@ -22,9 +13,9 @@ namespace NetworkTables
         {
             return new Dictionary<string, object>
             {
-                {"topics", _topics},
+                {"topics", topics},
                 {"subuid", Uid},
-                {"options", _options.ToObj()}
+                {"options", options.ToObj()}
             };
         }
 

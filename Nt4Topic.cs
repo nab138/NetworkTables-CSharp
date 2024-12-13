@@ -1,15 +1,13 @@
-using System;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 
-namespace NetworkTables
+namespace NetworkTablesSharp
 {
     public class Nt4Topic
     {
         public readonly int Uid;
         public readonly string Name;
         public readonly string Type;
-        private Dictionary<string, object> _properties;
+        private readonly Dictionary<string, object> _properties;
         
         public Nt4Topic(int uid, string name, string type, Dictionary<string, object> properties)
         {
@@ -22,9 +20,18 @@ namespace NetworkTables
         public Nt4Topic(Dictionary<string, object> obj)
         {
             Uid = Convert.ToInt32(obj["id"]);
-            Name = Convert.ToString(obj["name"]);
-            Type = Convert.ToString(obj["type"]);
-            _properties = JsonConvert.DeserializeObject<Dictionary<string, object>>(Convert.ToString(obj["properties"]));
+            string? name = Convert.ToString(obj["name"]);
+            string? type = Convert.ToString(obj["type"]);
+            string? propertiesString = Convert.ToString(obj["properties"]);
+            if (propertiesString == null || name == null || type == null)
+            {
+                throw new ArgumentException("Failed to deserialize topic object");
+            }
+            Dictionary<string, object>? properties = JsonConvert.DeserializeObject<Dictionary<string, object>>(propertiesString) ?? throw new ArgumentException("Failed to deserialize topic parameters object");
+
+            Name = name;
+            Type = type;
+            _properties = properties;
         }
 
         public Dictionary<string, object> ToPublishObj()

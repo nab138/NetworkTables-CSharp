@@ -1,6 +1,6 @@
 # NetworkTables-CSharp
 
-A bare-bones implementation of NT4 (4.0) for C#. Designed for unity but does not rely on it. You will have to strip out the occasional `Debug.Log` if you'd like to use it outside of unity.
+A bare-bones implementation of NT4 (4.0) for C#. Designed for unity but does not rely on it.
 
 > Disclaimer: This package has not been thourogly tested, and may have issues. This package may or may not be updated and supported in the future.
 
